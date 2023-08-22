@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type="text/css">
+        h3 {
+            display: inline-block;
+            line-height: 1;
+            margin: 0.5em;
+        }
+
+        .remark {
+            font-style: italic;
+        }
+
+        .divCatalog{margin: 1em;}
+
+        .divAdv,.divWeak{margin-left: 1em;}
+    </style>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <p>平民寵：好收集高階寵：有活動好收集，平常沒那麼多<br>進階寵：只能靠團體戰獲得有難易度或者量太少（課長可以無視）</p>
+        <p>*<=符號 要用厲害卷洗或者社群活動進化拿到</p>
+                <p>
+                    <select v-model="selectedCatalogId">
+                        <option v-for="(catalog, index) in sortedCatalogs" :key="catalog.id" :value="catalog.id">{{
+                            catalog.name }}</option>
+                    </select>
+                <div v-if="selectedCatalogId">
+                    <div class="divCatalog" v-for="(item, itemIndex) in filteredCatalogData" :key="itemIndex">
+                        <h2>{{ item.name }}</h2>
+                        <div class="divAdv">優勢：<span v-for="(advId, advIndex) in item.adv" :key="advIndex">
+                                {{ getCatalogNameById(advId) }}
+                                <span v-if="advIndex < item.adv.length - 1">、</span>
+                            </span></div>
+                        <div class="divWeak">劣勢：<span v-for="(weakId, weakIndex) in item.weak" :key="weakIndex">
+                                {{ getCatalogNameById(weakId) }}
+                                <span v-if="weakIndex < item.weak.length - 1">、</span>
+                            </span></div>
+                    </div>
+                    <div v-for="(item, itemIndex) in filteredData" :key="itemIndex">
+                        <h3> {{ item.name }}</h3>　
+                        <span> {{ item.skill }}</span>　
+                        <span class="remark">（{{ item.remark }}）</span>
+                    </div>
+                </div>
+                <div v-if="!selectedCatalogId">
+                    <div v-for="(catalog, index) in sortedCatalogs" :key="catalog.id">
+                        <h2>{{ catalog.name }}</h2>
+                        <div v-for="(item, idx) in filteredData2(catalog)" :key="idx">
+                            <h3> {{ item.name }}</h3>　
+                            <span> {{ item.skill }}</span>　
+                            <span class="remark">（{{ item.remark }}）</span>
+                        </div>
+                    </div>
+                </div>
+        </p>
+
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue
+
+        createApp({
+            data() {
+                return {
+                    selectedCatalogId: null,
+                    selectedCatalog: null,
+                    Catalogs: [{ id: 2, name: '火', adv: [11, 4, 14, 17], weak: [3, 8, 12] },
+                    { id: 3, name: '水', adv: [2, 8, 12], weak: [5, 4] },
+                    { id: 4, name: '草', adv: [3, 8, 12], weak: [2, 14, 7, 9, 11] },
+                    { id: 5, name: '電', adv: [9, 3], weak: [8] },
+                    { id: 6, name: '格鬥', adv: [16, 14, 12, 17, 1], weak: [9, 10, 18] },
+                    { id: 7, name: '毒', adv: [4, 18], weak: [8, 10] },
+                    { id: 8, name: '地面', adv: [2, 5, 7, 12, 17], weak: [3, 4, 14] },
+                    { id: 9, name: '飛行', adv: [4, 6, 11], weak: [5, 14, 12] },
+                    { id: 10, name: '超能力', adv: [6, 7], weak: [11, 13, 16] },
+                    { id: 11, name: '蟲', adv: [10, 4, 16], weak: [2, 9, 12] },
+                    { id: 12, name: '岩石', adv: [2, 14, 11, 9], weak: [3, 4, 6, 8, 17] },
+                    { id: 13, name: '幽靈', adv: [13, 10], weak: [13, 16] },
+                    { id: 14, name: '冰', adv: [15, 9, 4, 8], weak: [2, 6, 12, 17] },
+                    { id: 15, name: '龍', adv: [15], weak: [14, 15, 18] },
+                    { id: 16, name: '惡', adv: [13, 10], weak: [6, 11, 18] },
+                    { id: 17, name: '鋼', adv: [18, 12, 14], weak: [2, 6, 8] },
+                    { id: 18, name: '妖精', adv: [16, 15, 6], weak: [7, 17] },
+                    ],
+                    lsData: [
+                        { type: 6, name: '怪力', skill: '雙倍奉還+爆裂拳or十字+以牙還牙*', remark: '平民神寵必練' },
+                        { type: 6, name: '路卡利歐', skill: '雙倍奉還+增強拳or暗影球+波導彈', remark: '高階寵' },
+                        { type: 6, name: '代拉基翁', skill: '二連踢+岩崩+聖劍*＜=神組合', remark: '進階寵' },
+
+                        { type: 7, name: '耿鬼', skill: '暗影爪+暗影球+污泥炸彈', remark: '平民寵必練 ' },
+                        { type: 7, name: '羅絲雷朵', skill: '毒擊+污泥炸彈+打草結', remark: '高階寵 ' },
+                        { type: 7, name: '超大針蜂', skill: '毒擊+污泥炸彈', remark: '超進化才有用' },
+                        { type: 7, name: '秒蛙花', skill: '藤鞭+污泥炸彈+瘋狂植物*', remark: '平民寵 ' },
+                        { type: 7, name: '虛吾伊德', skill: '毒擊+污泥炸彈+岩崩', remark: '進階寵' },
+
+                        { type: 8, name: '烈咬陸鯊', skill: '泥巴射擊+大地之力*', remark: '高階寵必練' },
+                        { type: 8, name: '超巨沼怪', skill: '泥巴射擊+地震+加農水炮*', remark: '高階寵必練' },
+                        { type: 8, name: '龍頭地鼠', skill: '泥巴射擊+直衝鑽', remark: '高階寵' },
+                        { type: 8, name: '原固拉多', skill: '泥巴射擊+斷崖之劍*+火焰拳*', remark: '進階寵必練' },
+                        { type: 8, name: '象牙豬', skill: '擲泥+十萬馬力', remark: '平民寵必練' },
+                        { type: 8, name: '土地雲一般', skill: '泥巴射擊+大地之力', remark: '進階寵' },
+                        { type: 8, name: '土地雲靈獸', skill: '泥巴射擊+地震+蠻力', remark: '進階寵' },
+
+                        { type: 12, name: '戰槌龍', skill: '擊落+岩崩', remark: '高階寵' },
+                        { type: 12, name: '超化石翼龍', skill: '落石+岩崩', remark: '超進化才有用' },
+                        { type: 12, name: '代拉基翁', skill: '擊落+岩崩+聖劍*', remark: '進階寵' },
+                        { type: 12, name: '班吉拉', skill: '擊落*+尖石攻擊', remark: '高階寵必練' },
+                        { type: 12, name: '超甲狂犀', skill: '擊落+岩石炮*', remark: '高階寵必練' },
+
+                        { type: 17, name: '巨金怪', skill: '子彈拳+彗星拳*', remark: '高階寵必練' },
+                        { type: 17, name: '帝牙盧卡', skill: '金屬爪+鐵頭+流星群', remark: '進階寵' },
+
+                        { type: 2, name: '超y噴火龍', skill: '火焰漩渦+爆炸烈焰*', remark: '平民寵必練' },
+                        { type: 2, name: '超火焰雞', skill: '火焰漩渦+爆炸烈焰*+真氣彈', remark: '高階寵' },
+                        { type: 2, name: '萊西拉姆', skill: '火焰牙+交錯火焰*', remark: '進階寵' },
+                        { type: 2, name: '席多藍恩', skill: '火焰漩渦+熔岩風暴*+鐵頭', remark: '進階寵' },
+                        { type: 2, name: '火伊布', skill: '火焰漩渦+噴射火焰', remark: '平民寵' },
+                        { type: 2, name: '火神蛾', skill: '火焰漩渦+過熱', remark: '進階寵' },
+
+                        { type: 3, name: '原蓋歐卡', skill: '攀瀑+根源波動*', remark: '進階寵必練' },
+                        { type: 3, name: '超暴鯉龍', skill: '攀瀑+水尾流*+水炮', remark: '平民寵必練' },
+                        { type: 3, name: '超巨沼怪', skill: '水槍+加農水炮*+地震', remark: '高階寵必練' },
+
+                        { type: 4, name: '紙御劍', skill: '飛葉快刀+葉刃', remark: '進階寵' },
+                        { type: 4, name: '蜥蜴王', skill: '種子機關槍+瘋狂植物*', remark: '高階寵' },
+                        { type: 4, name: '羅絲雷朵', skill: '種子機關槍*+打草結+污泥炸彈', remark: '高階寵' },
+                        { type: 4, name: '秒蛙花', skill: '藤鞭+瘋狂植物*+污泥炸彈', remark: '平民寵' },
+
+                        { type: 10, name: '超夢', skill: '精神利刃+精神擊破*+暗影球or冰凍+真氣彈+噴射火焰+十萬伏特5個隨意搭', remark: '進階寵必練' },
+                        { type: 10, name: ' 超胡地', skill: '精神利刃+預知未來', remark: '高階寵' },
+
+                        { type: 11, name: '火神蛾', skill: '蟲咬+蟲鳴', remark: '進階寵' },
+
+                        { type: 13, name: '超耿鬼', skill: '暗影爪+暗影球+污泥炸彈', remark: '平民寵必練' },
+                        { type: 13, name: '水晶燈火靈', skill: '禍不單行+暗影球', remark: '高階寵' },
+                        { type: 13, name: '賽富豪', skill: '禍不單行+暗影球', remark: '高階寵必練' },
+                        { type: 13, name: '騎拉帝納起源', skill: '暗影爪+暗影譴襲*+奇異之風', remark: '進階寵' },
+
+                        { type: 5, name: '電束木', skill: '電光+放電', remark: '進階寵' },
+                        { type: 5, name: '雷電雲一般', skill: '電擊+打雷', remark: '進階寵' },
+                        { type: 5, name: '雷電雲靈獸', skill: '伏特替換+打雷', remark: '進階寵' },
+                        { type: 5, name: '捷克羅姆', skill: '充電光束+交錯閃電*', remark: '進階寵必練' },
+                        { type: 5, name: '鍬農炮蟲', skill: '電光+放電', remark: '進階寵' },
+                        { type: 5, name: '電擊魔獸', skill: '電擊+瘋狂伏特', remark: '高階寵必練' },
+                        { type: 5, name: '雷公', skill: '電擊+瘋狂伏特', remark: '進階寵' },
+                        { type: 5, name: '雷伊布', skill: '電擊+放電or打雷', remark: '平民寵' },
+                        { type: 5, name: '自爆磁怪', skill: '充電光束+瘋狂伏特', remark: '高階寵必練' },
+                        { type: 5, name: '倫琴貓', skill: '電光+瘋狂伏特', remark: '高階寵' },
+                        { type: 5, name: '阿羅啦隆隆岩', skill: '滾動*+瘋狂伏特+尖石攻擊', remark: '高階寵' },
+
+                        { type: 14, name: '象牙豬', skill: '細雪+雪崩', remark: '平民寵必練' },
+                        { type: 14, name: '冰伊布', skill: '冰息+雪崩', remark: '平民寵' },
+
+                        { type: 15, name: '快龍', skill: '龍尾+龍爪+逆鱗', remark: '高階寵必練' },
+                        { type: 15, name: '超暴飛龍', skill: '龍尾+逆鱗*', remark: '高階寵' },
+                        { type: 15, name: '超烈空坐', skill: '龍尾+逆鱗+廣域破壞*', remark: '進階寵' },
+                        { type: 15, name: '帝牙盧卡', skill: '龍息+龍星群', remark: '進階寵' },
+                        { type: 15, name: '雙斧戰龍', skill: '龍尾+廣域破壞*', remark: '高階寵' },
+
+                        { type: 16, name: '超班吉拉', skill: '咬住+狂舞揮打', remark: '高階寵必練' },
+                        { type: 16, name: '三首惡龍', skill: '咬住+狂舞揮打*', remark: '高階寵必練' },
+                        { type: 16, name: '伊裴爾塔爾', skill: '大聲咆哮+惡之波動', remark: '進階寵' },
+                        { type: 16, name: '達克萊伊', skill: '大聲咆哮+惡之波動', remark: '進階寵' },
+                        { type: 16, name: '超黑魯加', skill: '大聲咆哮+詐欺', remark: '高階寵' },
+
+                        { type: 18, name: '波克基斯', skill: '撒嬌+魔法閃耀+原始之力or噴射火焰or波導彈*', remark: '高階寵必練' },
+                        { type: 18, name: '超沙奈朵', skill: '撒嬌+魔法閃耀+暗影球or同步干擾*', remark: '高階寵' },
+                        { type: 18, name: '花潔夫人', skill: '妖精之風+月亮之力', remark: '進階寵' },
+                        { type: 18, name: '仙子伊布', skill: '撒嬌+魔法閃耀', remark: '平民寵' },
+                        { type: 18, name: '哲爾尼亞斯', skill: '大地掌控+月亮之力', remark: '進階寵' }
+                    ]
+                }
+            },
+            computed: {
+                sortedCatalogs() {
+                    return this.Catalogs.slice().sort((a, b) => a.id - b.id);
+                },
+                filteredData() {
+                    if (this.selectedCatalogId) {
+                        return this.lsData.filter(item => item.type === this.selectedCatalogId);
+                    }
+                    return [];
+                },
+                filteredCatalogData() {
+                    if (this.selectedCatalogId) {
+                        return this.Catalogs.filter(item => item.id === this.selectedCatalogId);
+                    }
+                    return [];
+                }
+            },
+            methods: {
+                // filteredCatalogData(id) {
+                //     this.selectedCatalog = this.Catalogs.filter(item => item.id === id);
+                // },
+                filteredData2(catalog) {
+                    return this.lsData.filter(item => item.type === catalog.id);
+                },
+                getCatalogNameById(id) {
+                    const advCatalog = this.Catalogs.find(catalog => catalog.id === id);
+                    return advCatalog ? advCatalog.name : '';
+                },
+            },
+            watch: {
+                selectedCatalog(newValue) {
+                    // Do something when the selected catalog changes
+                    console.log(`Selected catalog changed to: ${newValue}`);
+                    //this.selectedCatalog = this.Catalogs.filter(item => item.id === newValue);
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+
+</html>
