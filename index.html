@@ -34,10 +34,12 @@
         <p>平民寵：好收集高階寵：有活動好收集，平常沒那麼多<br>進階寵：只能靠團體戰獲得有難易度或者量太少（課長可以無視）</p>
         <p>*<=符號 要用厲害卷洗或者社群活動進化拿到</p>
                 <p>
-                    <select v-model="selectedCatalogId">
+                    <select v-model="selectedCatalogId" @change="clearInput">
                         <option v-for="(catalog, index) in sortedCatalogs" :key="catalog.id" :value="catalog.id">{{
                             catalog.name }}</option>
                     </select>
+                    <input type="text" name="txtSearch" id="txtSearch" v-model="searchTxt" placeholder="請輸入篩選關鍵字">
+                    <button @click="clearData">清除</button>
                 <div v-if="selectedCatalogId">
                     <div class="divCatalog" v-for="(item, itemIndex) in filteredCatalogData" :key="itemIndex">
                         <h2>{{ item.name }}</h2>
@@ -57,13 +59,15 @@
                     </div>
                 </div>
                 <div v-if="!selectedCatalogId">
-                    <div v-for="(catalog, index) in sortedCatalogs" :key="catalog.id">
-                        <h2>{{ catalog.name }}</h2>
-                        <div v-for="(item, idx) in filteredData2(catalog)" :key="idx">
-                            <h3> {{ item.name }}</h3>　
-                            <span> {{ item.skill }}</span>　
-                            <span class="remark">（{{ item.remark }}）</span>
-                        </div>
+                    <div v-for="(catalog, index) in sortedCatalogs" :key="catalog.id" >
+                        <template v-if="index > 0 && filteredData2(catalog).length > 0">
+                            <h2>{{ catalog.name }}</h2>
+                            <div v-for="(item, idx) in filteredData2(catalog)" :key="idx">
+                                <h3> {{ item.name }}</h3>　
+                                <span> {{ item.skill }}</span>　
+                                <span class="remark">（{{ item.remark }}）</span>
+                            </div>
+                        </template>
                     </div>
                 </div>
         </p>
@@ -76,9 +80,12 @@
         createApp({
             data() {
                 return {
-                    selectedCatalogId: null,
+                    searchTxt: null,
+                    selectedCatalogId: 0,
                     selectedCatalog: null,
-                    Catalogs: [{ id: 2, name: '火', adv: [11, 4, 14, 17], weak: [3, 8, 12] },
+                    Catalogs: [{ id: 0, name: '全部', adv: null, weak: null },
+                    { id: 1, name: '一般', adv: null, weak: [6] },
+                    { id: 2, name: '火', adv: [11, 4, 14, 17], weak: [3, 8, 12] },
                     { id: 3, name: '水', adv: [2, 8, 12], weak: [5, 4] },
                     { id: 4, name: '草', adv: [3, 8, 12], weak: [2, 14, 7, 9, 11] },
                     { id: 5, name: '電', adv: [9, 3], weak: [8] },
@@ -191,13 +198,16 @@
                 },
                 filteredData() {
                     if (this.selectedCatalogId) {
-                        return this.lsData.filter(item => item.type === this.selectedCatalogId);
+                        if(this.searchTxt !== null)
+                            return this.lsData.filter(item => item.type === this.selectedCatalogId && (item.name.includes(this.searchTxt)));
+                        else
+                            return this.lsData.filter(item => item.type === this.selectedCatalogId);
                     }
                     return [];
                 },
                 filteredCatalogData() {
                     if (this.selectedCatalogId) {
-                        return this.Catalogs.filter(item => item.id === this.selectedCatalogId);
+                            return this.Catalogs.filter(item => item.id === this.selectedCatalogId && item.id != 0);
                     }
                     return [];
                 }
@@ -207,20 +217,32 @@
                 //     this.selectedCatalog = this.Catalogs.filter(item => item.id === id);
                 // },
                 filteredData2(catalog) {
-                    return this.lsData.filter(item => item.type === catalog.id);
+                    //return this.lsData.filter(item => item.type === catalog.id);
+                    if(this.searchTxt !== null)
+                        return this.lsData.filter(item => item.type === catalog.id && (item.name.includes(this.searchTxt)));
+                    else
+                        return this.lsData.filter(item => item.type === catalog.id);
                 },
                 getCatalogNameById(id) {
                     const advCatalog = this.Catalogs.find(catalog => catalog.id === id);
                     return advCatalog ? advCatalog.name : '';
                 },
-            },
-            watch: {
-                selectedCatalog(newValue) {
-                    // Do something when the selected catalog changes
-                    console.log(`Selected catalog changed to: ${newValue}`);
-                    //this.selectedCatalog = this.Catalogs.filter(item => item.id === newValue);
+                clearInput() {
+                    this.searchTxt = '';
+                },
+                clearData() {
+                    this.selectedCatalogId=0;
+                    this.clearInput();
                 }
             }
+            // ,
+            // watch: {
+            //     selectedCatalog(newValue) {
+            //         // Do something when the selected catalog changes
+            //         //console.log(`Selected catalog changed to: ${newValue}`);
+            //         //this.selectedCatalog = this.Catalogs.filter(item => item.id === newValue);
+            //     }
+            // }
         }).mount('#app')
     </script>
 </body>
